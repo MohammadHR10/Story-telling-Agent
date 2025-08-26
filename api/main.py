@@ -6,8 +6,12 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from jinja2 import Template
+from dotenv import load_dotenv
 
 import google.generativeai as genai
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ---- Config ----
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -20,8 +24,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 # Choose a fast, inexpensive model for responsive UX
 # You can swap to 'gemini-1.5-pro' if you want higher quality/cost.
-MODEL_ID = "gemini-1.5-flash"
-model = genai.GenerativeModel(MODEL_ID)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 app = FastAPI(title="Story Agent (Prompt → Story)")
 
@@ -221,10 +224,22 @@ def revision_prompt(original_story: str, feedback: str) -> str:
 
 # ---- Helpers ----
 def call_gemini(prompt: str) -> str:
-    # Single-turn generation for determinism & cheapness
-    resp = model.generate_content(prompt)
-    # google-generativeai returns text in resp.text
-    return (resp.text or "").strip()
+    """Call Gemini API with error handling and rate limiting awareness"""
+    try:
+        # Single-turn generation for determinism & cheapness
+        resp = model.generate_content(prompt)
+        # google-generativeai returns text in resp.text
+        return (resp.text or "").strip()
+    except Exception as e:
+        error_msg = str(e)
+        if "RATE_LIMIT_EXCEEDED" in error_msg or "429" in error_msg:
+            raise Exception("API quota exceeded. Please check your Google AI Studio quota limits or try again later.")
+        elif "PERMISSION_DENIED" in error_msg or "403" in error_msg:
+            raise Exception("API key doesn't have permission. Please check your API key in Google AI Studio.")
+        elif "INVALID_ARGUMENT" in error_msg or "400" in error_msg:
+            raise Exception("Invalid API request. Please check your API key configuration.")
+        else:
+            raise Exception(f"Gemini API error: {error_msg}")
 
 def parse_gemini_output(text: str) -> tuple[str, str]:
     """
