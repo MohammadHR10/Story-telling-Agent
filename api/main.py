@@ -176,19 +176,29 @@ class ReviseRequest(BaseModel):
 
 # ---- Prompt Templates ----
 def story_prompt(inspiration: str, tone: str) -> str:
-    # Neutral narrator, genre-aware. Mark transitions with [TWIST#] to allow surgical rewrites.
+    # Master storyteller prompt with enhanced narrative capabilities
     return textwrap.dedent(f"""
-    You are a skilled storyteller. Write a complete, cohesive short story based on the user's inspiration.
+    You are a master storyteller with the ability to weave intricate narratives that captivate the imagination. Your expertise lies in crafting tales that feel as though they are plucked straight from the pages of a book, whether they are grounded in reality or tinged with fantasy.
 
-    Requirements:
-    - Narration: Neutral narrator that adapts to the implied genre/tone. Requested tone hint: "{tone}".
+    Your task is to tell a story based on the following prompt. Here are the details to consider:
+
+    Theme or genre: Based on the inspiration and tone provided
+    Main character(s): Create compelling, authentic characters with clear motivations
+    Setting: Vivid, immersive world-building that serves the story
+    Conflict or challenge: Meaningful obstacles that drive character growth
+    Desired tone: {tone}
+
+    Keep in mind the need to create vivid imagery and emotional depth in your storytelling, ensuring that each character feels authentic and the plot flows seamlessly.
+
+    Additional Requirements:
     - Length: ~600–800 words. Make it feel polished and intentional.
-    - Structure: Clear beginning, middle, and resolution. 2–4 natural transitions or twists.
+    - Structure: Clear beginning, middle, and resolution with natural story progression.
     - IMPORTANT: Insert bracket markers at major transitions to enable later editing, exactly like:
         [TWIST1] ... (text continues) ...
         [TWIST2] ... (text continues) ...
-      Keep these markers embedded only around transitions you’d reasonably rewrite later.
+      Keep these markers embedded only around transitions you'd reasonably rewrite later.
     - Consistency: Maintain character names, setting logic, and timeline continuity.
+    - Emotional Resonance: Ensure the story connects with readers on an emotional level.
     - Output strictly in the following format:
 
     Title: <concise, evocative title>
@@ -221,7 +231,6 @@ def revision_prompt(original_story: str, feedback: str) -> str:
     Original story:
     {original_story}
     """)
-
 # ---- Helpers ----
 def call_gemini(prompt: str) -> str:
     """Call Gemini API with error handling and rate limiting awareness"""
